@@ -915,7 +915,7 @@
                     const escapedTriggeredRules = triggeredRules.replace(/"/g, '""');
                     
                     // Build CSV row
-                    csvContent += `${result.transactionId},${date},"${description}",${amount},${result.fraudLikelihood},${result.riskScore},"${triggeredRules}"\n`;
+                    csvContent += `${result.transactionId},${date},${escapedDescription},${amount},"${result.fraudLikelihood}",${result.riskScore},${escapedRules}\n`;
                 });
                 
                 // Create download link
