@@ -287,9 +287,9 @@
             
             // Determine fraud likelihood based on risk score
             let fraudLikelihood = 'Low';
-            if (totalRiskScore >= 10) {
+            if (totalRiskScore >= 5) {
               fraudLikelihood = 'High';
-            } else if (totalRiskScore >= 5) {
+            } else if (totalRiskScore >= 3) {
               fraudLikelihood = 'Medium';
             }
             
