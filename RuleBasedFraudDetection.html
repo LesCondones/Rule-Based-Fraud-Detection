@@ -909,13 +909,9 @@
                     
                     // Format triggered rules
                     const triggeredRules = result.triggeredRules.map(rule => rule.ruleName).join('; ');
-
-                    //Properly escape values that might contain commas
-                    const escapedDescription = description.replace(/"/g, '""');
-                    const escapedTriggeredRules = triggeredRules.replace(/"/g, '""');
                     
                     // Build CSV row
-                    csvContent += `${result.transactionId},${date},${escapedDescription},${amount},"${result.fraudLikelihood}",${result.riskScore},${escapedRules}\n`;
+                    csvContent += `${result.transactionId},${date},"${description}",${amount},${result.fraudLikelihood},${result.riskScore},"${triggeredRules}"\n`;
                 });
                 
                 // Create download link
