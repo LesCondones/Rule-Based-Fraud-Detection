@@ -1,0 +1,25 @@
+Date,Transaction ID,Description,Category,Type,Amount,Balance,Location
+2025-03-01,TRX12345,Salary Deposit,Income,Credit,3250.00,5432.75,Online Banking
+2025-03-02,TRX12346,Grocery Store,Food & Dining,Debit,-87.32,5345.43,Seattle WA
+2025-03-03,TRX12347,Electric Bill,Utilities,Debit,-142.57,5202.86,Online Payment
+2025-03-04,TRX12365,Investment Transfer,Investments,Debit,-12500.00,16202.86,Online Banking
+2025-03-05,TRX12348,Gas Station,Transportation,Debit,-45.67,16157.19,Bellevue WA
+2025-03-07,TRX12349,Restaurant Payment,Food & Dining,Debit,-65.89,16091.30,Seattle WA
+2025-03-08,TRX12350,Online Shopping,Shopping,Debit,-129.99,15961.31,Online
+2025-03-10,TRX12351,Mobile Phone Bill,Utilities,Debit,-85.00,15876.31,Online Payment
+2025-03-12,TRX12352,ATM Withdrawal,Cash & ATM,Debit,-200.00,15676.31,Downtown Seattle
+2025-03-14,TRX12353,Streaming Service,Entertainment,Debit,-14.99,15661.32,Online
+2025-03-15,TRX12354,Internet Service,Utilities,Debit,-79.99,15581.33,Online Payment
+2025-03-16,TRX12355,Coffee Shop,Food & Dining,Debit,-8.75,15572.58,Capitol Hill WA
+2025-03-18,TRX12356,Pharmacy,Health & Medical,Debit,-42.67,15529.91,Redmond WA
+2025-03-19,TRX12366,Property Down Payment,Housing,Debit,-15000.00,529.91,Escrow Services
+2025-03-20,TRX12357,Interest Payment,Income,Credit,1.24,531.15,Online Banking
+2025-03-21,TRX12358,Public Transportation,Transportation,Debit,-25.00,506.15,Seattle WA
+2025-03-22,TRX12359,Gym Membership,Health & Fitness,Debit,-50.00,456.15,Seattle WA
+2025-03-23,TRX12367,Home Equity Loan,Loans,Credit,25000.00,25456.15,Online Banking
+2025-03-24,TRX12360,Office Supplies,Shopping,Debit,-32.87,25423.28,Bellevue WA
+2025-03-25,TRX12361,Rent Payment,Housing,Debit,-1200.00,24223.28,Online Payment
+2025-03-26,TRX12362,Haircut,Personal Care,Debit,-35.00,24188.28,Queen Anne WA
+2025-03-28,TRX12363,Insurance Premium,Insurance,Debit,-110.50,24077.78,Online Payment
+2025-03-29,TRX12368,Car Purchase,Auto,Debit,-18500.00,5577.78,Kirkland WA
+2025-03-30,TRX12364,Freelance Income,Income,Credit,450.00,6027.78,Direct Deposit
