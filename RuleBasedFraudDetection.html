@@ -26,7 +26,7 @@
         }
         .drag-area.active {
             border-color: #0d6efd;
-            background-color: #f8f9fa;
+            background-color: #faf8f8;
         }
     </style>
 </head>
@@ -145,7 +145,7 @@
                   const threshold = userProfile?.largeAmountThreshold || 5000;
                   return transaction.amount > threshold;
                 },
-                riskScore: 3
+                riskScore: 6
               },
               {
                 id: 'unusual-hour',
