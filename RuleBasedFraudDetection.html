@@ -142,7 +142,7 @@
                 name: 'Large Transaction Amount',
                 description: 'Flags transactions above a threshold amount',
                 evaluate: (transaction, userProfile) => {
-                  const threshold = userProfile?.largeAmountThreshold || 5000;
+                  const threshold = userProfile?.largeAmountThreshold || 3250;
                   return transaction.amount > threshold;
                 },
                 riskScore: 6
