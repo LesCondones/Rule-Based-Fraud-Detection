@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Statement Fraud Detection</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        .fraud-high {
+            background-color: #ffdddd;
+        }
+        .fraud-medium {
+            background-color: #ffffdd;
+        }
+        .fraud-low {
+            background-color: #ddffdd;
+        }
+        .drag-area {
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .drag-area.active {
+            border-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3>Bank Statement Fraud Detection</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="drag-area" id="dropArea">
+                            <h5>Drag & Drop your CSV bank statement here</h5>
+                            <p>or</p>
+                            <button class="btn btn-primary" id="browseBtn">Browse Files</button>
+                            <input type="file" id="fileInput" accept=".csv" hidden>
+                        </div>
+                        
+                        <div id="csvMappingContainer" style="display: none;">
+                            <h4>Map CSV Columns to Transaction Fields</h4>
+                            <p>Please map the columns from your CSV file to the required transaction fields:</p>
+                            <div id="mappingForm" class="row g-3 mb-4"></div>
+                            <button id="analyzeBtn" class="btn btn-success">Analyze Transactions</button>
+                        </div>
+                        
+                        <div id="loadingSpinner" style="display: none;" class="text-center my-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Analyzing transactions...</p>
+                        </div>
+                        
+                        <div id="resultsSection" style="display: none;">
+                            <h4>Analysis Results</h4>
+                            <div class="d-flex justify-content-between mb-3">
+                                <div>
+                                    <span class="badge bg-danger me-2">High Risk</span>
+                                    <span class="badge bg-warning text-dark me-2">Medium Risk</span>
+                                    <span class="badge bg-success">Low Risk</span>
+                                </div>
+                                <button id="downloadReportBtn" class="btn btn-sm btn-outline-primary">Download Report</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover" id="resultsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Date/Time</th>
+                                            <th>Description</th>
+                                            <th>Amount</th>
+                                            <th>Risk Level</th>
+                                            <th>Risk Score</th>
+                                            <th>Triggered Rules</th>
+                                            <th>Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="resultsBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="mt-4">
+                                <h5>Summary</h5>
+                                <div id="summaryStats" class="row"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div class="modal fade" id="transactionDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Transaction Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="transactionDetailsBody">
+                    <!-- Content will be dynamically inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js for visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <!-- Fraud Detection System JavaScript -->
+    <script>
+        // Fraud Detection System Class
+        class FraudDetectionSystem {
+          constructor(rules = []) {
+            // Initialize with default rules if none provided
+            this.rules = rules.length > 0 ? rules : this.getDefaultRules();
+          }
+
+          /**
+           * Define default fraud detection rules
+           * @returns {Array} Array of rule objects
+           */
+          getDefaultRules() {
+            return [
+              {
+                id: 'large-amount',
+                name: 'Large Transaction Amount',
+                description: 'Flags transactions above a threshold amount',
+                evaluate: (transaction, userProfile) => {
+                  const threshold = userProfile?.largeAmountThreshold || 5000;
+                  return transaction.amount > threshold;
+                },
+                riskScore: 3
+              },
+              {
+                id: 'unusual-hour',
+                name: 'Unusual Transaction Hour',
+                description: 'Flags transactions occurring during unusual hours (2AM-5AM)',
+                evaluate: (transaction) => {
+                  const hour = new Date(transaction.timestamp).getHours();
+                  return hour >= 2 && hour < 5;
+                },
+                riskScore: 2
+              },
+              {
+                id: 'high-frequency',
+                name: 'High Transaction Frequency',
+                description: 'Flags when too many transactions occur in a short timeframe',
+                evaluate: (transaction, userProfile, transactionHistory) => {
+                  if (!transactionHistory || transactionHistory.length < 3) return false;
+                  
+                  const recentTransactions = transactionHistory.filter(tx => {
+                    const timeDiff = new Date(transaction.timestamp) - new Date(tx.timestamp);
+                    // Look for transactions in the last hour
+                    return timeDiff <= 3600000 && timeDiff >= 0;
+                  });
+                  
+                  return recentTransactions.length >= 5;
+                },
+                riskScore: 4
+              },
+              {
+                id: 'geo-velocity',
+                name: 'Geographical Velocity',
+                description: 'Flags transactions that occur in different locations in a short timeframe',
+                evaluate: (transaction, userProfile, transactionHistory) => {
+                  if (!transactionHistory || transactionHistory.length < 1) return false;
+                  
+                  // Get the most recent transaction before the current one
+                  const previousTransactions = transactionHistory
+                    .filter(tx => new Date(tx.timestamp) < new Date(transaction.timestamp))
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                  
+                  if (previousTransactions.length === 0) return false;
+                  
+                  const lastTransaction = previousTransactions[0];
+                  
+                  // If locations are different
+                  if (transaction.location !== lastTransaction.location) {
+                    // Calculate time difference in hours
+                    const timeDiff = (new Date(transaction.timestamp) - new Date(lastTransaction.timestamp)) / 3600000;
+                    
+                    // Flag if transactions in different locations are less than 3 hours apart
+                    return timeDiff < 3;
+                  }
+                  
+                  return false;
+                },
+                riskScore: 5
+              },
+              {
+                id: 'penny-amounts',
+                name: 'Unusual Penny Amounts',
+                description: 'Flags transactions with unusual cent values (often used in testing stolen cards)',
+                evaluate: (transaction) => {
+                  // Extract cents portion of the amount
+                  const cents = Math.round((transaction.amount * 100) % 100);
+                  // Flag transactions that have unusual cent values (not 00, 50, 95, 99)
+                  const commonCents = [0, 50, 95, 99];
+                  return !commonCents.includes(cents);
+                },
+                riskScore: 1
+              },
+              {
+                id: 'new-merchant-category',
+                name: 'New Merchant Category',
+                description: 'Flags transactions in merchant categories the user hasn\'t used before',
+                evaluate: (transaction, userProfile, transactionHistory) => {
+                  if (!transactionHistory) return false;
+                  
+                  // Get all unique merchant categories from transaction history
+                  const historicalCategories = new Set(
+                    transactionHistory.map(tx => tx.merchantCategory)
+                  );
+                  
+                  // Flag if this category has never been seen before
+                  return !historicalCategories.has(transaction.merchantCategory);
+                },
+                riskScore: 2
+              }
+            ];
+          }
+
+          /**
+           * Add a custom rule to the system
+           * @param {Object} rule - The rule object to add
+           */
+          addRule(rule) {
+            if (!rule.id || !rule.name || !rule.evaluate || !rule.riskScore) {
+              throw new Error('Invalid rule format');
+            }
+            this.rules.push(rule);
+          }
+
+          /**
+           * Remove a rule by ID
+           * @param {string} ruleId - ID of the rule to remove
+           */
+          removeRule(ruleId) {
+            this.rules = this.rules.filter(rule => rule.id !== ruleId);
+          }
+
+          /**
+           * Analyze a transaction against all rules
+           * @param {Object} transaction - Transaction data 
+           * @param {Object} userProfile - User profile data
+           * @param {Array} transactionHistory - Array of previous transactions
+           * @returns {Object} Analysis results with triggered rules and risk score
+           */
+          analyzeTransaction(transaction, userProfile = {}, transactionHistory = []) {
+            const triggeredRules = [];
+            let totalRiskScore = 0;
+            
+            for (const rule of this.rules) {
+              try {
+                const isTriggered = rule.evaluate(transaction, userProfile, transactionHistory);
+                
+                if (isTriggered) {
+                  triggeredRules.push({
+                    ruleId: rule.id,
+                    ruleName: rule.name,
+                    description: rule.description,
+                    riskScore: rule.riskScore
+                  });
+                  
+                  totalRiskScore += rule.riskScore;
+                }
+              } catch (error) {
+                console.error(`Error evaluating rule ${rule.id}:`, error);
+              }
+            }
+            
+            // Determine fraud likelihood based on risk score
+            let fraudLikelihood = 'Low';
+            if (totalRiskScore >= 10) {
+              fraudLikelihood = 'High';
+            } else if (totalRiskScore >= 5) {
+              fraudLikelihood = 'Medium';
+            }
+            
+            return {
+              transactionId: transaction.id,
+              timestamp: transaction.timestamp,
+              fraudLikelihood,
+              riskScore: totalRiskScore,
+              triggeredRules,
+              requiresReview: totalRiskScore >= 5
+            };
+          }
+          
+          /**
+           * Analyze a batch of transactions
+           * @param {Array} transactions - Array of transactions to analyze
+           * @param {Object} userProfile - User profile data
+           * @returns {Array} Array of analysis results
+           */
+          analyzeBatch(transactions, userProfile = {}) {
+            const results = [];
+            const sortedTransactions = [...transactions].sort(
+              (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+            );
+            
+            for (let i = 0; i < sortedTransactions.length; i++) {
+              const transaction = sortedTransactions[i];
+              const history = sortedTransactions.slice(0, i);
+              
+              const result = this.analyzeTransaction(transaction, userProfile, history);
+              results.push(result);
+            }
+            
+            return results;
+          }
+        }
+
+        // Application Code
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const dropArea = document.getElementById('dropArea');
+            const fileInput = document.getElementById('fileInput');
+            const browseBtn = document.getElementById('browseBtn');
+            const csvMappingContainer = document.getElementById('csvMappingContainer');
+            const mappingForm = document.getElementById('mappingForm');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsBody = document.getElementById('resultsBody');
+            const summaryStats = document.getElementById('summaryStats');
+            const downloadReportBtn = document.getElementById('downloadReportBtn');
+            
+            // Bootstrap modal
+            let transactionDetailsModal;
+            document.addEventListener('DOMContentLoaded', function() {
+                transactionDetailsModal = new bootstrap.Modal(document.getElementById('transactionDetailsModal'));
+            });
+            const transactionDetailsBody = document.getElementById('transactionDetailsBody');
+            
+            // Global variables
+            let csvData = [];
+            let csvHeaders = [];
+            let mapping = {};
+            let fraudDetector = new FraudDetectionSystem();
+            let analysisResults = [];
+            
+            // User profile with defaults
+            const userProfile = {
+                largeAmountThreshold: 2000
+            };
+            
+            // Required transaction fields for fraud detection
+            const requiredFields = [
+                { id: 'id', label: 'Transaction ID', description: 'Unique identifier for the transaction' },
+                { id: 'timestamp', label: 'Date/Time', description: 'When the transaction occurred' },
+                { id: 'amount', label: 'Amount', description: 'Transaction amount (positive for deposits, negative for withdrawals)' },
+                { id: 'location', label: 'Location', description: 'Where the transaction occurred' },
+                { id: 'merchantCategory', label: 'Category', description: 'Type or category of the transaction' }
+            ];
+            
+            // Optional fields that could be useful
+            const optionalFields = [
+                { id: 'description', label: 'Description', description: 'Transaction description or memo' }
+            ];
+
+            // Event Listeners
+            browseBtn.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', function(e) {
+                if (this.files[0]) {
+                    handleFile(this.files[0]);
+                }
+            });
+            
+            // Drag and Drop functionality
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.classList.add('active');
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('active');
+            }
+            
+            dropArea.addEventListener('drop', function(e) {
+                const dt = e.dataTransfer;
+                const file = dt.files[0];
+                handleFile(file);
+            });
+            
+            // Handle the CSV file
+            function handleFile(file) {
+                // Check if it's a CSV file
+                if (!file.name.endsWith('.csv')) {
+                    alert('Please upload a CSV file.');
+                    return;
+                }
+                
+                // Parse the CSV file
+                Papa.parse(file, {
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        if (results.data && results.data.length > 0) {
+                            csvData = results.data;
+                            csvHeaders = results.meta.fields;
+                            
+                            // Show the mapping form
+                            createMappingForm();
+                            csvMappingContainer.style.display = 'block';
+                        } else {
+                            alert('No data found in the CSV file.');
+                        }
+                    },
+                    error: function(error) {
+                        console.error('Error parsing CSV:', error);
+                        alert('Error parsing the CSV file. Please check the format.');
+                    }
+                });
+            }
+            
+            // Create the mapping form based on CSV headers
+            function createMappingForm() {
+                mappingForm.innerHTML = '';
+                
+                // Create mapping options for each required field
+                [...requiredFields, ...optionalFields].forEach(field => {
+                    const colDiv = document.createElement('div');
+                    colDiv.className = 'col-md-6 mb-3';
+                    
+                    const formGroup = document.createElement('div');
+                    formGroup.className = 'form-group';
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = `mapping-${field.id}`;
+                    label.className = 'form-label';
+                    label.textContent = field.label + (requiredFields.includes(field) ? ' *' : '');
+                    
+                    const select = document.createElement('select');
+                    select.className = 'form-select';
+                    select.id = `mapping-${field.id}`;
+                    select.dataset.field = field.id;
+                    if (requiredFields.includes(field)) {
+                        select.required = true;
+                    }
+                    
+                    // Add a default "Select" option
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = 'Select column';
+                    select.appendChild(defaultOption);
+                    
+                    // Add options based on CSV headers
+                    csvHeaders.forEach(header => {
+                        const option = document.createElement('option');
+                        option.value = header;
+                        option.textContent = header;
+                        
+                        // Try to auto-map based on common column names
+                        if (autoMapColumn(header, field.id)) {
+                            option.selected = true;
+                            mapping[field.id] = header;
+                        }
+                        
+                        select.appendChild(option);
+                    });
+                    
+                    // Add event listener for mapping changes
+                    select.addEventListener('change', function() {
+                        mapping[field.id] = this.value;
+                    });
+                    
+                    const small = document.createElement('small');
+                    small.className = 'form-text text-muted';
+                    small.textContent = field.description;
+                    
+                    formGroup.appendChild(label);
+                    formGroup.appendChild(select);
+                    formGroup.appendChild(small);
+                    colDiv.appendChild(formGroup);
+                    mappingForm.appendChild(colDiv);
+                });
+                
+                // Add user profile settings
+                const profileDiv = document.createElement('div');
+                profileDiv.className = 'col-12 mt-4';
+                profileDiv.innerHTML = `
+                    <h5>User Profile Settings</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="largeAmountThreshold" class="form-label">Large Amount Threshold</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="largeAmountThreshold" value="${userProfile.largeAmountThreshold}">
+                            </div>
+                            <small class="form-text text-muted">Transactions above this amount will be flagged</small>
+                        </div>
+                    </div>
+                `;
+                mappingForm.appendChild(profileDiv);
+                
+                // Add event listener for user profile changes
+                const thresholdInput = document.createElement('input');
+                thresholdInput.id = 'largeAmountThreshold';
+                thresholdInput.addEventListener('change', function() {
+                    userProfile.largeAmountThreshold = parseFloat(this.value) || 2000;
+                });
+            }
+            
+            // Try to automatically map columns based on common naming patterns
+            function autoMapColumn(header, fieldId) {
+                const headerLower = header.toLowerCase();
+                
+                switch (fieldId) {
+                    case 'id':
+                        return headerLower.includes('id') || headerLower.includes('reference') || headerLower.includes('number');
+                    
+                    case 'timestamp':
+                        return headerLower.includes('date') || headerLower.includes('time');
+                    
+                    case 'amount':
+                        return headerLower.includes('amount') || headerLower.includes('sum') || headerLower === 'debit' || headerLower === 'credit';
+                    
+                    case 'location':
+                        return headerLower.includes('location') || headerLower.includes('place') || headerLower.includes('merchant location');
+                    
+                    case 'merchantCategory':
+                        return headerLower.includes('category') || headerLower.includes('type') || headerLower.includes('merchant type');
+                    
+                    case 'description':
+                        return headerLower.includes('description') || headerLower.includes('memo') || headerLower.includes('narrative') || headerLower.includes('details');
+                    
+                    default:
+                        return false;
+                }
+            }
+            
+            // Analyze button click handler
+            analyzeBtn.addEventListener('click', function() {
+                // Validate mapping
+                const missingFields = requiredFields.filter(field => !mapping[field.id]);
+                
+                if (missingFields.length > 0) {
+                    alert(`Please map the following required fields: ${missingFields.map(f => f.label).join(', ')}`);
+                    return;
+                }
+                
+                // Update user profile
+                const thresholdInput = document.getElementById('largeAmountThreshold');
+                if (thresholdInput) {
+                    userProfile.largeAmountThreshold = parseFloat(thresholdInput.value) || 2000;
+                }
+                
+                // Show loading spinner
+                csvMappingContainer.style.display = 'none';
+                loadingSpinner.style.display = 'block';
+                
+                // Process and analyze transactions (with a small delay to allow UI to update)
+                setTimeout(() => {
+                    const transactions = processTransactions();
+                    analyzeTransactions(transactions);
+                }, 100);
+            });
+            
+            // Process CSV data into transactions
+            function processTransactions() {
+                return csvData.map((row, index) => {
+                    // Create basic transaction object
+                    const transaction = {
+                        id: mapping.id ? row[mapping.id] || `tx${index}` : `tx${index}`,
+                        userId: 'user1', // Default user ID
+                    };
+                    
+                    // Process timestamp
+                    if (mapping.timestamp) {
+                        const rawDate = row[mapping.timestamp];
+                        try {
+                            // Try to parse the date
+                            transaction.timestamp = new Date(rawDate).toISOString();
+                        } catch (e) {
+                            // If parsing fails, use current date
+                            transaction.timestamp = new Date().toISOString();
+                            console.warn(`Could not parse date: ${rawDate}`);
+                        }
+                    } else {
+                        transaction.timestamp = new Date().toISOString();
+                    }
+                    
+                    // Process amount
+                    if (mapping.amount) {
+                        let amount = row[mapping.amount];
+                        
+                        // If amount is a string, try to clean and parse it
+                        if (typeof amount === 'string') {
+                            // Remove currency symbols and commas
+                            amount = amount.replace(/[$£€,]/g, '');
+                            // Parse to float
+                            amount = parseFloat(amount);
+                        }
+                        
+                        transaction.amount = isNaN(amount) ? 0 : Math.abs(amount); // Use absolute value
+                    } else {
+                        transaction.amount = 0;
+                    }
+                    
+                    // Process location
+                    transaction.location = mapping.location ? row[mapping.location] || 'Unknown' : 'Unknown';
+                    
+                    // Process merchant category
+                    transaction.merchantCategory = mapping.merchantCategory ? row[mapping.merchantCategory] || 'Other' : 'Other';
+                    
+                    // Process description (optional)
+                    if (mapping.description) {
+                        transaction.description = row[mapping.description] || '';
+                    } else {
+                        transaction.description = '';
+                    }
+                    
+                    // Add the original row data for reference
+                    transaction.originalData = row;
+                    
+                    return transaction;
+                });
+            }
+            
+            // Analyze transactions and display results
+            function analyzeTransactions(transactions) {
+                // Analyze the transactions
+                analysisResults = fraudDetector.analyzeBatch(transactions, userProfile);
+                
+                // Hide loading spinner
+                loadingSpinner.style.display = 'none';
+                
+                // Show results section
+                resultsSection.style.display = 'block';
+                
+                // Clear previous results
+                resultsBody.innerHTML = '';
+                
+                // Process each result
+                analysisResults.forEach((result, index) => {
+                    const transaction = transactions[index];
+                    
+                    // Create a row for each transaction
+                    const row = document.createElement('tr');
+                    
+                    // Add fraud likelihood class
+                    if (result.fraudLikelihood === 'High') {
+                        row.classList.add('fraud-high');
+                    } else if (result.fraudLikelihood === 'Medium') {
+                        row.classList.add('fraud-medium');
+                    } else {
+                        row.classList.add('fraud-low');
+                    }
+                    
+                    // Format date
+                    const date = new Date(transaction.timestamp);
+                    const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                    
+                    // Format amount
+                    const formattedAmount = new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD'
+                    }).format(transaction.amount);
+                    
+                    // Create badge for risk level
+                    let badgeClass = 'bg-success';
+                    if (result.fraudLikelihood === 'High') {
+                        badgeClass = 'bg-danger';
+                    } else if (result.fraudLikelihood === 'Medium') {
+                        badgeClass = 'bg-warning text-dark';
+                    }
+                    
+                    // Format triggered rules
+                    const rulesText = result.triggeredRules.length > 0 
+                        ? result.triggeredRules.map(rule => rule.ruleName).join(', ')
+                        : 'None';
+                    
+                    // Populate the row
+                    row.innerHTML = `
+                        <td>${formattedDate}</td>
+                        <td>${transaction.description || transaction.merchantCategory}</td>
+                        <td>${formattedAmount}</td>
+                        <td><span class="badge ${badgeClass}">${result.fraudLikelihood}</span></td>
+                        <td>${result.riskScore}</td>
+                        <td>${rulesText}</td>
+                        <td><button class="btn btn-sm btn-outline-info view-details" data-index="${index}">View</button></td>
+                    `;
+                    
+                    resultsBody.appendChild(row);
+                });
+                
+                // Add event listeners to detail buttons
+                document.querySelectorAll('.view-details').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const index = parseInt(this.dataset.index);
+                        showTransactionDetails(index);
+                    });
+                });
+                
+                // Update summary statistics
+                updateSummary(analysisResults, transactions);
+            }
+            
+            // Show transaction details in modal
+            function showTransactionDetails(index) {
+                const result = analysisResults[index];
+                const transaction = csvData[index];
+                
+                // Initialize modal if it doesn't exist yet
+                if (!transactionDetailsModal) {
+                    transactionDetailsModal = new bootstrap.Modal(document.getElementById('transactionDetailsModal'));
+                }
+                
+                let riskBadgeClass = 'bg-success';
+                if (result.fraudLikelihood === 'High') {
+                    riskBadgeClass = 'bg-danger';
+                } else if (result.fraudLikelihood === 'Medium') {
+                    riskBadgeClass = 'bg-warning text-dark';
+                }
+                
+                // Format triggered rules
+                let triggeredRulesHtml = '<p>No rules triggered</p>';
+                if (result.triggeredRules.length > 0) {
+                    triggeredRulesHtml = '<ul class="list-group">';
+                    result.triggeredRules.forEach(rule => {
+                        triggeredRulesHtml += `
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <strong>${rule.ruleName}</strong>
+                                    <span class="badge bg-secondary">Score: ${rule.riskScore}</span>
+                                </div>
+                                <p class="mb-0 text-muted">${rule.description}</p>
+                            </li>
+                        `;
+                    });
+                    triggeredRulesHtml += '</ul>';
+                }
+                
+                // Format original transaction data
+                let originalDataHtml = '<table class="table table-sm">';
+                for (const [key, value] of Object.entries(transaction)) {
+                    originalDataHtml += `
+                        <tr>
+                            <td><strong>${key}</strong></td>
+                            <td>${value}</td>
+                        </tr>
+                    `;
+                }
+                originalDataHtml += '</table>';
+                
+                transactionDetailsBody.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Risk Assessment</h5>
+                            <div class="mb-3">
+                                <span class="badge ${riskBadgeClass} fs-6">${result.fraudLikelihood} Risk</span>
+                                <span class="ms-2">Score: ${result.riskScore}</span>
+                            </div>
+                            
+                            <h6>Triggered Rules:</h6>
+                            ${triggeredRulesHtml}
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Transaction Data</h5>
+                            ${originalDataHtml}
+                        </div>
+                    </div>
+                `;
+                
+                transactionDetailsModal.show();
+            }
+            
+            // Update summary statistics
+            function updateSummary(results, transactions) {
+                // Calculate statistics
+                const totalTransactions = results.length;
+                const highRiskCount = results.filter(r => r.fraudLikelihood === 'High').length;
+                const mediumRiskCount = results.filter(r => r.fraudLikelihood === 'Medium').length;
+                const lowRiskCount = results.filter(r => r.fraudLikelihood === 'Low').length;
+                
+                const totalAmount = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+                const highRiskAmount = transactions
+                    .filter((_, i) => results[i].fraudLikelihood === 'High')
+                    .reduce((sum, tx) => sum + tx.amount, 0);
+                
+                // Format amounts
+                const formatCurrency = (amount) => new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                }).format(amount);
+                
+                // Create summary HTML
+                summaryStats.innerHTML = `
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Transaction Count</h5>
+                                <p class="card-text">Total: ${totalTransactions}</p>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-danger">High Risk: ${highRiskCount} (${((highRiskCount / totalTransactions) * 100).toFixed(1)}%)</span>
+                                    <span class="text-warning">Medium Risk: ${mediumRiskCount} (${((mediumRiskCount / totalTransactions) * 100).toFixed(1)}%)</span>
+                                    <span class="text-success">Low Risk: ${lowRiskCount} (${((lowRiskCount / totalTransactions) * 100).toFixed(1)}%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Transaction Volume</h5>
+                                <p class="card-text">Total: ${formatCurrency(totalAmount)}</p>
+                                <p class="text-danger">High Risk Amount: ${formatCurrency(highRiskAmount)} (${((highRiskAmount / totalAmount) * 100).toFixed(1)}%)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Risk Distribution</h5>
+                                <canvas id="riskChart" width="100" height="100"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Create chart
+                const ctx = document.getElementById('riskChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['High', 'Medium', 'Low'],
+                        datasets: [{
+                            label: 'Risk Distribution',
+                            data: [highRiskCount, mediumRiskCount, lowRiskCount],
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.7)',
+                                'rgba(255, 205, 86, 0.7)',
+                                'rgba(75, 192, 192, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgb(255, 99, 132)',
+                                'rgb(255, 205, 86)',
+                                'rgb(75, 192, 192)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Handle download report button
+            downloadReportBtn.addEventListener('click', function() {
+                if (analysisResults.length === 0) return;
+                
+                // Create CSV content
+                let csvContent = "data:text/csv;charset=utf-8,";
+                
+                // Add headers
+                csvContent += "Transaction ID,Date,Description,Amount,Risk Level,Risk Score,Triggered Rules\n";
+                
+                // Add rows
+                analysisResults.forEach((result, index) => {
+                    const transaction = csvData[index];
+                    const date = new Date(result.timestamp).toLocaleString();
+                    
+                    // Format description
+                    const description = mapping.description ? transaction[mapping.description] || '' : '';
+                    
+                    // Format amount
+                    const amount = mapping.amount ? transaction[mapping.amount] : 0;
+                    
+                    // Format triggered rules
+                    const triggeredRules = result.triggeredRules.map(rule => rule.ruleName).join('; ');
+                    
+                    // Build CSV row
+                    csvContent += `${result.transactionId},${date},"${description}",${amount},${result.fraudLikelihood},${result.riskScore},"${triggeredRules}"\n`;
+                });
+                
+                // Create download link
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "fraud_analysis_report.csv");
+                document.body.appendChild(link);
+                
+                // Trigger download
+                link.click();
+                
+                // Clean up
+                document.body.removeChild(link);
+            });
+        });
+    </script>
+</body>
+</html>

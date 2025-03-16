@@ -1,0 +1,67 @@
+Transaction_ID,Date,Description,Amount,Balance,Transaction_Type,Category,Location
+TX1001,2025-03-01T09:30:45,Paycheck Deposit,3500.00,3500.00,Credit,Income,Online
+TX1002,2025-03-02T11:15:22,Grocery Store,-125.50,3374.50,Debit,Groceries,New York
+TX1003,2025-03-03T14:20:10,Electric Bill,-89.99,3284.51,Debit,Utilities,Online
+TX1004,2025-03-04T18:35:41,Dinner Restaurant,-78.50,3206.01,Debit,Dining,New York
+TX1005,2025-03-05T08:45:32,Gas Station,-45.00,3161.01,Debit,Transportation,New York
+TX1006,2025-03-07T12:30:15,Phone Bill,-85.99,3075.02,Debit,Utilities,Online
+TX1007,2025-03-07T15:22:18,Coffee Shop,-4.75,3070.27,Debit,Dining,New York
+TX1008,2025-03-08T09:15:00,Transfer to Savings,-500.00,2570.27,Debit,Transfers,Online
+TX1009,2025-03-09T14:10:45,Department Store,-89.95,2480.32,Debit,Shopping,New York
+TX1010,2025-03-10T16:30:22,Monthly Subscription,-14.99,2465.33,Debit,Entertainment,Online
+TX1011,2025-03-12T03:22:45,Online Purchase,-899.99,1565.34,Debit,Electronics,Online
+TX1012,2025-03-12T03:45:12,Online Purchase,-129.37,1435.97,Debit,Clothing,Online
+TX1013,2025-03-12T19:10:05,Grocery Store,-68.24,1367.73,Debit,Groceries,New York
+TX1014,2025-03-13T13:30:45,ATM Withdrawal,-200.00,1167.73,Debit,Cash,New York
+TX1015,2025-03-14T15:30:45,Pharmacy,-32.87,1134.86,Debit,Health,New York
+TX1016,2025-03-14T16:10:22,Gas Station,-48.50,1086.36,Debit,Transportation,New York
+TX1017,2025-03-15T10:15:10,Paycheck Deposit,3500.00,4586.36,Credit,Income,Online
+TX1018,2025-03-15T16:25:45,Furniture Store,-1455.87,3130.49,Debit,Home,New York
+TX1019,2025-03-16T12:30:22,Coffee Shop,-5.25,3125.24,Debit,Dining,New York
+TX1020,2025-03-16T12:45:18,Books & Stationery,-45.98,3079.26,Debit,Shopping,New York
+TX1021,2025-03-16T13:05:05,Fast Food,-12.49,3066.77,Debit,Dining,New York
+TX1022,2025-03-16T13:30:10,Department Store,-89.95,2976.82,Debit,Shopping,New York
+TX1023,2025-03-16T14:15:45,Electronics Store,-299.99,2676.83,Debit,Electronics,New York
+TX1024,2025-03-17T11:30:22,Insurance Premium,-150.00,2526.83,Debit,Insurance,Online
+TX1025,2025-03-18T10:15:45,Transfer from Savings,1000.00,3526.83,Credit,Transfers,Online
+TX1026,2025-03-19T14:30:22,Internet Bill,-79.99,3446.84,Debit,Utilities,Online
+TX1027,2025-03-20T10:15:45,Gas Station,-52.37,3394.47,Debit,Transportation,New York
+TX1028,2025-03-20T19:30:22,Restaurant,-115.78,3278.69,Debit,Dining,New York
+TX1029,2025-03-21T11:15:45,Grocery Store,-158.92,3119.77,Debit,Groceries,New York
+TX1030,2025-03-22T09:30:22,Car Payment,-349.99,2769.78,Debit,Auto,Online
+TX1031,2025-03-22T16:15:45,Gift Shop,-34.95,2734.83,Debit,Gifts,New York
+TX1032,2025-03-22T20:10:22,Movie Theater,-27.50,2707.33,Debit,Entertainment,New York
+TX1033,2025-03-23T02:15:45,Online Casino,-2000.00,707.33,Debit,Entertainment,Online
+TX1034,2025-03-23T02:45:22,Online Casino,-500.00,207.33,Debit,Entertainment,Online
+TX1035,2025-03-23T04:30:45,ATM Withdrawal,-200.00,7.33,Debit,Cash,New York
+TX1036,2025-03-24T14:15:45,Paycheck Deposit,3500.00,3507.33,Credit,Income,Online
+TX1037,2025-03-24T16:30:22,Gym Membership,-49.99,3457.34,Debit,Health,New York
+TX1038,2025-03-25T09:15:45,Pharmacy,-22.47,3434.87,Debit,Health,New York
+TX1039,2025-03-25T11:30:22,Grocery Store,-88.74,3346.13,Debit,Groceries,New York
+TX1040,2025-03-25T14:45:45,Airline Tickets,-785.50,2560.63,Debit,Travel,Online
+TX1041,2025-03-25T14:55:15,Online Purchase,-65.99,2494.64,Debit,Shopping,Online
+TX1042,2025-03-25T15:05:45,Clothing Store,-129.95,2364.69,Debit,Clothing,New York
+TX1043,2025-03-25T15:15:45,Department Store,-79.95,2284.74,Debit,Shopping,New York
+TX1044,2025-03-25T15:25:45,Restaurant,-52.75,2231.99,Debit,Dining,New York
+TX1045,2025-03-25T15:35:45,Coffee Shop,-4.25,2227.74,Debit,Dining,New York
+TX1046,2025-03-26T08:30:22,Hotel Booking,-329.99,1897.75,Debit,Travel,Online
+TX1047,2025-03-26T11:45:45,Gas Station,-47.50,1850.25,Debit,Transportation,New York
+TX1048,2025-03-26T15:15:22,Fast Food,-15.75,1834.50,Debit,Dining,New York
+TX1049,2025-03-26T18:00:00,ATM Withdrawal,-100.00,1734.50,Debit,Cash,New York
+TX1050,2025-03-27T09:30:22,ATM Withdrawal,-100.00,1634.50,Debit,Cash,Chicago
+TX1051,2025-03-27T10:15:45,Taxi,-35.50,1599.00,Debit,Transportation,Chicago
+TX1052,2025-03-27T11:30:22,Restaurant,-68.37,1530.63,Debit,Dining,Chicago
+TX1053,2025-03-27T14:45:45,Souvenir Shop,-45.98,1484.65,Debit,Shopping,Chicago
+TX1054,2025-03-27T18:30:22,Hotel Room Service,-42.75,1441.90,Debit,Dining,Chicago
+TX1055,2025-03-28T08:45:45,Coffee Shop,-6.85,1435.05,Debit,Dining,Chicago
+TX1056,2025-03-28T12:30:22,Gift Shop,-58.76,1376.29,Debit,Gifts,Chicago
+TX1057,2025-03-28T15:45:45,Restaurant,-83.92,1292.37,Debit,Dining,Chicago
+TX1058,2025-03-28T19:30:22,Theater Tickets,-175.00,1117.37,Debit,Entertainment,Chicago
+TX1059,2025-03-28T23:15:45,Bar,-48.50,1068.87,Debit,Dining,Chicago
+TX1060,2025-03-29T10:30:22,Museum Entry,-22.50,1046.37,Debit,Entertainment,Chicago
+TX1061,2025-03-29T14:45:45,Candy Store,-12.47,1033.90,Debit,Groceries,Chicago
+TX1062,2025-03-30T09:30:22,ATM Withdrawal,-100.00,933.90,Debit,Cash,Las Vegas
+TX1063,2025-03-30T12:15:45,Casino,-500.00,433.90,Debit,Entertainment,Las Vegas
+TX1064,2025-03-30T16:30:22,Restaurant,-125.87,308.03,Debit,Dining,Las Vegas
+TX1065,2025-03-30T20:45:45,Bar,-85.50,222.53,Debit,Dining,Las Vegas
+TX1066,2025-03-30T23:59:59,Casino,-200.00,22.53,Debit,Entertainment,Las Vegas
