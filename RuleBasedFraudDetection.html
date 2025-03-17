@@ -532,7 +532,7 @@
                 const thresholdInput = document.createElement('input');
                 thresholdInput.id = 'largeAmountThreshold';
                 thresholdInput.addEventListener('change', function() {
-                    userProfile.largeAmountThreshold = parseFloat(this.value) || 2000;
+                    userProfile.largeAmountThreshold = parseFloat(this.value) || 5000;
                 });
             }
             
@@ -899,19 +899,20 @@
                 // Add rows
                 analysisResults.forEach((result, index) => {
                     const transaction = csvData[index];
+                    const mappedTransaction = processTransactions()[index];
                     const date = new Date(result.timestamp).toLocaleString();
                     
                     // Format description
                     const description = mapping.description ? transaction[mapping.description] || '' : '';
                     
                     // Format amount
-                    const amount = mapping.amount ? transaction[mapping.amount] : 0;
+                    const amount = mapping.amount ? transaction[mapping.amount] || 0;
                     
                     // Format triggered rules
                     const triggeredRules = result.triggeredRules.map(rule => rule.ruleName).join('; ');
                     
                     // Build CSV row
-                    csvContent += `${result.transactionId},${date},"${description}",${amount},${result.fraudLikelihood},${result.riskScore},"${triggeredRules}"\n`;
+                    csvContent += `${result.transactionId},${date},"${description}",${amount},${result.riskScore},${result.fraudLikelihood},${result.riskScore},"${triggeredRules}"\n`;
                 });
                 
                 // Create download link
