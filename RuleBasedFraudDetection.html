@@ -886,48 +886,54 @@
                 });
             }
             
-            // Handle download report button
-            downloadReportBtn.addEventListener('click', function() {
-                if (analysisResults.length === 0) return;
-                
-                // Create CSV content
-                let csvContent = "data:text/csv;charset=utf-8,";
-                
-                // Add headers
-                csvContent += "Transaction ID,Date,Description,Amount,Risk Level,Risk Score,Triggered Rules\n";
-                
-                // Add rows
-                analysisResults.forEach((result, index) => {
-                    const transaction = csvData[index];
-                    const mappedTransaction = processTransactions()[index];
-                    const date = new Date(result.timestamp).toLocaleString();
-                    
-                    // Format description
-                    const description = mapping.description ? transaction[mapping.description] || '' : '';
-                    
-                    // Format amount
-                    const amount = mapping.amount ? transaction[mapping.amount] || 0;
-                    
-                    // Format triggered rules
-                    const triggeredRules = result.triggeredRules.map(rule => rule.ruleName).join('; ');
-                    
-                    // Build CSV row
-                    csvContent += `${result.transactionId},${date},"${description}",${amount},${result.riskScore},${result.fraudLikelihood},${result.riskScore},"${triggeredRules}"\n`;
-                });
-                
-                // Create download link
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "fraud_analysis_report.csv");
-                document.body.appendChild(link);
-                
-                // Trigger download
-                link.click();
-                
-                // Clean up
-                document.body.removeChild(link);
-            });
+            // Replace the existing downloadReportBtn event listener with this updated version
+downloadReportBtn.addEventListener('click', function() {
+    if (analysisResults.length === 0) return;
+    
+    // Create CSV content
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Get the original CSV headers and add fraud analysis headers
+    const originalHeaders = csvHeaders.join(',');
+    csvContent += originalHeaders + ",Risk Level,Risk Score,Triggered Rules\n";
+    
+    // Add rows
+    analysisResults.forEach((result, index) => {
+        const transaction = csvData[index];
+        
+        // Start with all original CSV values in their original order
+        let rowValues = [];
+        for (const header of csvHeaders) {
+            // Escape any commas in the values by wrapping in quotes
+            const value = String(transaction[header] || '').replace(/"/g, '""');
+            rowValues.push(`"${value}"`);
+        }
+        
+        // Format triggered rules
+        const triggeredRules = result.triggeredRules.map(rule => rule.ruleName).join('; ');
+        
+        // Add fraud analysis data
+        rowValues.push(`"${result.fraudLikelihood}"`); // Risk Level
+        rowValues.push(result.riskScore); // Risk Score
+        rowValues.push(`"${triggeredRules}"`); // Triggered Rules
+        
+        // Join all values and add newline
+        csvContent += rowValues.join(',') + "\n";
+    });
+    
+    // Create download link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "fraud_analysis_report.csv");
+    document.body.appendChild(link);
+    
+    // Trigger download
+    link.click();
+    
+    // Clean up
+    document.body.removeChild(link);
+});
         });
     </script>
 </body>
